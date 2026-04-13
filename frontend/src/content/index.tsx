@@ -45,7 +45,7 @@ function injectOverlay() {
     document.body.appendChild(overlay);
 
     // Logic to fetch AI message from your Node.js/Home Server
-    // fetchAIMessage();
+    fetchAIMessage();
 
     document
         .getElementById("cancel-btn")

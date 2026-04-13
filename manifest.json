@@ -1,0 +1,22 @@
+{
+    "manifest_version": 3,
+    "name": "AI Impulse Saver",
+    "version": "1.0.0",
+    "permissions": ["storage"],
+    "host_permissions": ["http://localhost:5000/*"],
+    "action": {
+        "default_popup": "index.html",
+        "default_title": "Set Budget Goal"
+    },
+    "content_scripts": [
+        {
+            "js": ["frontend/src/content/index.tsx"],
+            "matches": [
+                "*://*.shopee.ph/*",
+                "*://*.lazada.com.ph/*",
+                "*://shopee.ph/*",
+                "*://lazada.com.ph/*"
+            ]
+        }
+    ]
+}

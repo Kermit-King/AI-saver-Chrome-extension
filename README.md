@@ -5,7 +5,7 @@ A Chrome extension that intercepts checkout clicks and shows a pause overlay bef
 ## What this project includes
 
 - `frontend/`: React + Vite Chrome extension build
-- `backend/`: Node server that can call Python AI logic (optional for basic overlay test)
+- `backend/`: Node server for persuasion messages (works now with a safe fallback response)
 - `test.html`: Local page to test the content script quickly
 
 ## Prerequisites
@@ -75,7 +75,7 @@ kill -9 <PID>
 
 ## Optional: Run backend AI service
 
-The basic overlay test works without backend.
+The basic overlay test works without backend. If backend is running, the overlay will display a personalized persuasion message.
 
 If you want AI responses wired in:
 
@@ -84,7 +84,7 @@ cd backend
 node src/server.js
 ```
 
-Default backend URL is `http://localhost:5000`.
+Default backend URL is `http://localhost:5050`.
 
 ## Development workflow (quick)
 
@@ -119,4 +119,4 @@ Then open:
 
 ## Project status
 
-Frontend extension flow is active for local testing. Backend + Python AI integration is still in progress and may require additional wiring for full end-to-end persuasion responses.
+Frontend extension flow is active for local testing. Backend API routes `/analyze` and `/analyze-impulse` are compatible with the current frontend payload. Advanced Python/Gemini generation is still in progress.

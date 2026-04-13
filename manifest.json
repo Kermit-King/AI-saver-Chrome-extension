@@ -4,8 +4,26 @@
     "name": "AI Impulse Saver",
     "version": "1.0.0",
     "permissions": ["storage"],
-    "host_permissions": ["http://localhost:5000/*"],
+    "host_permissions": ["http://localhost:5050/*"],
+    "web_accessible_resources": [
+        {
+            "resources": ["icon.png"],
+            "matches": ["<all_urls>"]
+        }
+    ],
+    "icons": {
+        "16": "money.png",
+        "32": "money.png",
+        "48": "money.png",
+        "128": "money.png"
+    },
     "action": {
+        "default_icon": {
+            "16": "money.png",
+            "32": "money.png",
+            "48": "money.png",
+            "128": "money.png"
+        },
         "default_popup": "index.html",
         "default_title": "Set Budget Goal"
     },

@@ -1,42 +1,67 @@
 import express from "express";
 import cors from "cors";
-import {spawn} from "child_process"
 
-const app = cors();
-const PORT = 5000;
+const app = express();
+const PORT = Number(process.env.PORT) || 5050;
 
-app.use(cors({
-    origin: '*' // During dev, '*' is fine. In production, use 'chrome-extension://YOUR_ID'
-}));
-
+app.use(
+  cors({
+    origin: "*",
+  }),
+);
 app.use(express.json());
 
-app.post("/analyze", async (req, res) =>{
-    const {item, price} = req.body;
+function toNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
 
-    console.log(`processing ai message for ${item} - ${price}`);
+function buildFallbackMessage({ item, price, userGoal, userTarget, savedAmount }) {
+  const safeItem = item?.toString().trim() || "this purchase";
+  const safeGoal = userGoal?.toString().trim() || "your savings goal";
+  const target = toNumber(userTarget, 0);
+  const saved = toNumber(savedAmount, 0);
+  const cost = toNumber(price, 0);
 
-    const pythonProcess = spawn("python", ["ai_logic.py", item, price.toString()]);
+  const remaining = Math.max(target - saved, 0);
+  const afterBuyRemaining = Math.max(target - (saved + cost), 0);
 
-    let aiResponse = ""
+  if (target > 0) {
+    return `If you skip ${safeItem}, that ${cost.toLocaleString()} can move you closer to ${safeGoal}. Remaining after saving now: ${afterBuyRemaining.toLocaleString()} (from ${remaining.toLocaleString()}).`;
+  }
 
-    pythonProcess.stdout.on('data', (data) => {
-        aiResponse += data.toString();
+  return `Pause for 10 seconds before buying ${safeItem}. Small delays help prevent impulse spending.`;
+}
+
+async function handleAnalyze(req, res) {
+  const { item, price, userGoal, userTarget, savedAmount } = req.body ?? {};
+
+  try {
+    const persuasionText = buildFallbackMessage({
+      item,
+      price,
+      userGoal,
+      userTarget,
+      savedAmount,
     });
 
-    pythonProcess.stderr.on('data', (data) => {
-        console.error(`Python Error: ${data}`);
+    return res.json({ persuasionText });
+  } catch (error) {
+    console.error("/analyze error:", error);
+    return res.status(500).json({
+      persuasionText: "Think of your goal. You can do this.",
     });
+  }
+}
 
-    pythonProcess.on('close', (code) => {
-        if (code === 0) {
-            res.json({ persuasionText: aiResponse.trim() });
-        } else {
-            res.status(500).json({ persuasionText: "Think of the home server! You can do it!" });
-        }
-    });
-});  
+// Keep both routes for frontend compatibility
+app.post("/analyze", handleAnalyze);
+app.post("/analyze-impulse", handleAnalyze);
+
+app.get("/health", (_req, res) => {
+  res.json({ ok: true, service: "ai-saver-backend" });
+});
 
 app.listen(PORT, () => {
-    console.log(`🚀 AI Saver Server running at http://localhost:${PORT}`);
+  console.log(`AI Saver Server running at http://localhost:${PORT}`);
 });

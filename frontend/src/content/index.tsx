@@ -1,29 +1,38 @@
-
+alert("CONTENT SCRIPT LOADED");
+console.log("IF YOU SEE THIS, IT WORKS");
 const handleImpulse = (event: MouseEvent) => {
-  // Check if the user is clicking a 'Checkout' or 'Place Order' button
-  const target = event.target as HTMLElement;
-  const isCheckoutBtn = target.innerText?.toLowerCase().includes('check out') || 
-                        target.innerText?.toLowerCase().includes('place order');
+    // Check if the user is clicking a 'Checkout' or 'Place Order' button
 
-  if (isCheckoutBtn) {
-    event.preventDefault(); // Stop the purchase!
-    event.stopPropagation();
-    
-    injectOverlay();
-  }
+    console.log("window press");
+
+    const target = event.target as HTMLElement;
+    const text = target.innerText?.toLowerCase() || "";
+    const isCheckoutBtn =
+        text.includes("checkout") ||
+        text.includes("check out") ||
+        text.includes("place order");
+
+    console.log(text);
+
+    if (isCheckoutBtn) {
+        event.preventDefault(); // Stop the purchase!
+        event.stopPropagation();
+
+        injectOverlay();
+    }
 };
 
 function injectOverlay() {
-  const overlay = document.createElement('div');
-  overlay.id = "ai-saver-overlay";
-  overlay.style.cssText = `
+    const overlay = document.createElement("div");
+    overlay.id = "ai-saver-overlay";
+    overlay.style.cssText = `
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.85); z-index: 99999;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     color: white; font-family: sans-serif;
   `;
 
-  overlay.innerHTML = `
+    overlay.innerHTML = `
     <div style="text-align: center; max-width: 400px; padding: 20px;">
       <h1>Wait! Do you really need this?</h1>
       <p id="ai-message">Consulting your financial goals...</p>
@@ -34,46 +43,51 @@ function injectOverlay() {
     </div>
   `;
 
-  document.body.appendChild(overlay);
+    document.body.appendChild(overlay);
 
-  // Logic to fetch AI message from your Node.js/Home Server
-  fetchAIMessage();
+    // Logic to fetch AI message from your Node.js/Home Server
+    fetchAIMessage();
 
-  document.getElementById('cancel-btn')?.addEventListener('click', () => overlay.remove());
-  document.getElementById('continue-btn')?.addEventListener('click', () => {
-    alert("Moving funds to savings simulator...");
-    overlay.remove();
-    // Here you would trigger the actual checkout if they insist
-  });
+    document
+        .getElementById("cancel-btn")
+        ?.addEventListener("click", () => overlay.remove());
+    document.getElementById("continue-btn")?.addEventListener("click", () => {
+        alert("Moving funds to savings simulator...");
+        overlay.remove();
+        // Here you would trigger the actual checkout if they insist
+    });
 }
 
-document.addEventListener('click', handleImpulse, true);
-
+document.addEventListener("click", handleImpulse, true);
 
 async function fetchAIMessage() {
-  const messageElement = document.getElementById('ai-message');
-  
-  // 1. Get the user's specific goal from storage
-  chrome.storage.local.get(['goalName', 'targetAmount'], async (result) => {
-    const goal = result.goalName || "Home Server";
-    const target = result.targetAmount || 15000;
+    const messageElement = document.getElementById("ai-message");
 
-    try {
-      // 2. Send these personalized goal details to your Node.js backend
-      const response = await fetch('http://localhost:5000/analyze-impulse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          item: "Product Name", 
-          price: 2500,
-          userGoal: goal,     // New field
-          userTarget: target  // New field
-        })
-      });
-      const data = await response.json();
-      if (messageElement) messageElement.innerText = data.persuasionText;
-    } catch (err) {
-      if (messageElement) messageElement.innerText = `Think of your ${goal}!`;
-    }
-  });
+    // 1. Get the user's specific goal from storage
+    chrome.storage.local.get(["goalName", "targetAmount"], async (result) => {
+        const goal = result.goalName || "Home Server";
+        const target = result.targetAmount || 15000;
+
+        try {
+            // 2. Send these personalized goal details to your Node.js backend
+            const response = await fetch(
+                "http://localhost:5000/analyze-impulse",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        item: "Product Name",
+                        price: 2500,
+                        userGoal: goal, // New field
+                        userTarget: target, // New field
+                    }),
+                },
+            );
+            const data = await response.json();
+            if (messageElement) messageElement.innerText = data.persuasionText;
+        } catch (err) {
+            if (messageElement)
+                messageElement.innerText = `Think of your ${goal}!`;
+        }
+    });
 }

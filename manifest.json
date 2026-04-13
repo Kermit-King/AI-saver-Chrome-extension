@@ -1,5 +1,6 @@
 {
     "manifest_version": 3,
+    
     "name": "AI Impulse Saver",
     "version": "1.0.0",
     "permissions": ["storage"],
@@ -10,7 +11,7 @@
     },
     "content_scripts": [
         {
-            "js": ["frontend/src/content/index.tsx"],
+            "js": ["src/content/index.tsx"],
             "matches": [
                 "*://*.shopee.ph/*",
                 "*://*.lazada.com.ph/*",

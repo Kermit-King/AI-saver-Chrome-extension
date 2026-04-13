@@ -1,31 +1,4 @@
-import { useState, useEffect } from 'react';
-
-function App() {
-  const [goalName, setGoalName] = useState('');
-  const [targetAmount, setTargetAmount] = useState(15000);
-  const [saved, setSaved] = useState(false);
-
-  interface StorageData{
-    goalName?: string;
-    targetAmount?: number;
-  }
-
-  useEffect(() => {
-    chrome.storage.local.get(['goalName', 'targetAmount'], (result: StorageData) => {
-      if (result.goalName) setGoalName(result.goalName);
-      if (result.targetAmount) setTargetAmount(result.targetAmount);
-    });
-  }, []);
-
-  const handleSave = () => {
-    chrome.storage.local.set({ goalName, targetAmount }, () => {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000); // Visual feedback
-    });
-  };
-
-  return (
-    <div className="w-64 p-4 bg-slate-900 text-white shadow-xl">
+<div className="w-64 p-4 bg-slate-900 text-white shadow-xl">
       <h2 className="text-lg font-bold mb-4 border-b border-slate-700 pb-2">🎯 Goal Settings</h2>
       
       <div className="space-y-4">
@@ -34,7 +7,7 @@ function App() {
           <input 
             type="text" 
             value={goalName}
-            onChange={(e) => setGoalName(e.target.value)}
+            onChange={}
             className="w-full bg-slate-800 border border-slate-700 rounded p-2 mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
@@ -44,7 +17,7 @@ function App() {
           <input 
             type="number" 
             value={targetAmount}
-            onChange={(e) => setTargetAmount(Number(e.target.value))}
+            onChange={}
             className="w-full bg-slate-800 border border-slate-700 rounded p-2 mt-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
@@ -57,7 +30,3 @@ function App() {
         </button>
       </div>
     </div>
-  );
-}
-
-export default App;

@@ -9,16 +9,16 @@ interface StorageData {
 
 function App() {
   const [goalName, setGoalName] = useState('')
-  const [targetAmount, setTargetAmount] = useState(0)
-  const [savedAmount, setSavedAmount] = useState(0)
+  const [targetAmount, setTargetAmount] = useState('')
+  const [savedAmount, setSavedAmount] = useState('')
   const [blockedCount, setBlockedCount] = useState(0)
   const [toastVisible, setToastVisible] = useState(false)
 
   useEffect(() => {
     const syncState = (result: StorageData) => {
       setGoalName(result.goalName ?? '')
-      setTargetAmount(result.targetAmount ?? 0)
-      setSavedAmount(result.savedAmount ?? 0)
+      setTargetAmount(result.targetAmount != null ? String(result.targetAmount) : '')
+      setSavedAmount(result.savedAmount != null ? String(result.savedAmount) : '')
       setBlockedCount(result.blockedCount ?? 0)
     }
 
@@ -33,8 +33,8 @@ function App() {
     ) => {
       if (areaName !== 'local') return
       if (changes.goalName) setGoalName(changes.goalName.newValue as any ?? '')
-      if (changes.targetAmount) setTargetAmount(changes.targetAmount.newValue as any?? 0)
-      if (changes.savedAmount) setSavedAmount(changes.savedAmount.newValue as any?? 0)
+      if (changes.targetAmount) setTargetAmount(changes.targetAmount.newValue != null ? String(changes.targetAmount.newValue) : '')
+      if (changes.savedAmount) setSavedAmount(changes.savedAmount.newValue != null ? String(changes.savedAmount.newValue) : '')
       if (changes.blockedCount) setBlockedCount(changes.blockedCount.newValue as any?? 0)
     }
 
@@ -42,19 +42,25 @@ function App() {
     return () => chrome.storage.onChanged.removeListener(handleStorageChange)
   }, [])
 
+  const targetAmountValue = Number(targetAmount) || 0
+  const savedAmountValue = Number(savedAmount) || 0
+
   const progressPercent = useMemo(() => {
-    if (targetAmount <= 0) return 0
-    return Math.min(Math.round((savedAmount / targetAmount) * 100), 100)
-  }, [savedAmount, targetAmount])
+    if (targetAmountValue <= 0) return 0
+    return Math.min(Math.round((savedAmountValue / targetAmountValue) * 100), 100)
+  }, [savedAmountValue, targetAmountValue])
 
   const formatMoney = (value: number) => `$${value.toLocaleString()}`
 
   const handleSave = () => {
+    const parsedTargetAmount = Number(targetAmount) || 0
+    const parsedSavedAmount = Number(savedAmount) || 0
+
     chrome.storage.local.set(
       {
         goalName,
-        targetAmount,
-        savedAmount,
+        targetAmount: parsedTargetAmount,
+        savedAmount: parsedSavedAmount,
         blockedCount,
       },
       () => {
@@ -65,7 +71,7 @@ function App() {
   }
 
   const handleReset = () => {
-    setSavedAmount(0)
+    setSavedAmount('')
     chrome.storage.local.set({
       savedAmount: 0,
     })
@@ -86,7 +92,7 @@ function App() {
           <div className="popup-stat-label">Your Goal</div>
           <div className="popup-stat-value">{goalName || '—'}</div>
           <p className="popup-stat-sub">
-            {formatMoney(savedAmount)} / {formatMoney(targetAmount)}
+            {formatMoney(savedAmountValue)} / {formatMoney(targetAmountValue)}
           </p>
           <div className="popup-progress-track" aria-label="Goal progress">
             <div className="popup-progress-fill" style={{ width: `${progressPercent}%` }} />
@@ -114,8 +120,8 @@ function App() {
             id="targetAmount"
             type="number"
             value={targetAmount}
-            placeholder="15000"
-            onChange={(e) => setTargetAmount(Number(e.target.value) || 0)}
+            placeholder="e.g. 15000"
+            onChange={(e) => setTargetAmount(e.target.value)}
           />
         </div>
 
@@ -125,15 +131,14 @@ function App() {
             id="savedAmount"
             type="number"
             value={savedAmount}
-            placeholder="0"
-            onChange={(e) => setSavedAmount(Number(e.target.value) || 0)}
+            placeholder="e.g. 200"
+            onChange={(e) => setSavedAmount(e.target.value)}
           />
         </div>
 
         <button className="popup-save-btn" type="button" onClick={handleSave}>Save Goal</button>
+        <button className="popup-reset-btn" type="button" onClick={handleReset}>Reset progress</button>
       </section>
-        <button className="popup-save-btn" type="button" onClick={handleReset}>Reset progress</button>
-
 
       <footer className="popup-impulses-blocked">
         <span>{blockedCount}</span> impulse purchases blocked

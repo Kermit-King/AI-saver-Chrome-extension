@@ -205,26 +205,34 @@ function handleItemSave(overlay: HTMLElement) {
 
     const itemPrice = parseFloat(priceRaw.replace(/[^\d.]/g, ""));
 
-    chrome.storage.local.get(["purchaseHistory", "savedAmount"], (result) => {
-        const history = (result.purchaseHistory as any[]) || [];
-        const saved = result.savedAmount || 0;
+    chrome.storage.local.get(
+        ["purchaseHistory", "savedAmount", "blockedCount"],
+        (result) => {
+            const history = (result.purchaseHistory as any[]) || [];
+            const saved = result.savedAmount || 0;
+            const currentCount = result.blockedCount || 0;
+            const updatedCount = Number(currentCount) + 1;
 
-        const newItem = {
-            id: Date.now(),
-            name: itemName,
-            price: itemPrice,
-            date: new Date().toLocaleDateString(),
-            status: "interupted",
-        };
+            const newItem = {
+                id: Date.now(),
+                name: itemName,
+                price: itemPrice,
+                date: new Date().toLocaleDateString(),
+                status: "interupted",
+            };
 
-        chrome.storage.local.set({ 
-            purchaseHistory: [newItem, ...history],
-            savedAmount: Number(saved) + itemPrice
-        }, 
-            () => {
-            console.log("Item added to history log.");
-        });
-    });
+            chrome.storage.local.set(
+                {
+                    purchaseHistory: [newItem, ...history],
+                    savedAmount: Number(saved) + itemPrice,
+                    blockedCount: updatedCount,
+                },
+                () => {
+                    console.log("Item added to history log.");
+                },
+            );
+        },
+    );
 }
 
 function injectOverlay() {

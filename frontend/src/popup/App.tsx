@@ -15,15 +15,31 @@ function App() {
   const [toastVisible, setToastVisible] = useState(false)
 
   useEffect(() => {
+    const syncState = (result: StorageData) => {
+      setGoalName(result.goalName ?? '')
+      setTargetAmount(result.targetAmount ?? 0)
+      setSavedAmount(result.savedAmount ?? 0)
+      setBlockedCount(result.blockedCount ?? 0)
+    }
+
     chrome.storage.local.get(
       ['goalName', 'targetAmount', 'savedAmount', 'blockedCount'],
-      (result: StorageData) => {
-        setGoalName(result.goalName ?? '')
-        setTargetAmount(result.targetAmount ?? 0)
-        setSavedAmount(result.savedAmount ?? 0)
-        setBlockedCount(result.blockedCount ?? 0)
-      },
+      syncState,
     )
+
+    const handleStorageChange = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      areaName: string,
+    ) => {
+      if (areaName !== 'local') return
+      if (changes.goalName) setGoalName(changes.goalName.newValue as any ?? '')
+      if (changes.targetAmount) setTargetAmount(changes.targetAmount.newValue as any?? 0)
+      if (changes.savedAmount) setSavedAmount(changes.savedAmount.newValue as any?? 0)
+      if (changes.blockedCount) setBlockedCount(changes.blockedCount.newValue as any?? 0)
+    }
+
+    chrome.storage.onChanged.addListener(handleStorageChange)
+    return () => chrome.storage.onChanged.removeListener(handleStorageChange)
   }, [])
 
   const progressPercent = useMemo(() => {
@@ -39,12 +55,20 @@ function App() {
         goalName,
         targetAmount,
         savedAmount,
+        blockedCount,
       },
       () => {
         setToastVisible(true)
         window.setTimeout(() => setToastVisible(false), 2000)
       },
     )
+  }
+
+  const handleReset = () => {
+    setSavedAmount(0)
+    chrome.storage.local.set({
+      savedAmount: 0,
+    })
   }
 
   return (
@@ -108,6 +132,8 @@ function App() {
 
         <button className="popup-save-btn" type="button" onClick={handleSave}>Save Goal</button>
       </section>
+        <button className="popup-save-btn" type="button" onClick={handleReset}>Reset progress</button>
+
 
       <footer className="popup-impulses-blocked">
         <span>{blockedCount}</span> impulse purchases blocked

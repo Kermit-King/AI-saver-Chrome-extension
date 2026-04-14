@@ -167,12 +167,12 @@ const overlayStyles = `
 `;
 
 function ensureOverlayStyles() {
-        if (document.getElementById("ai-saver-style")) return;
+    if (document.getElementById("ai-saver-style")) return;
 
-        const style = document.createElement("style");
-        style.id = "ai-saver-style";
-        style.textContent = overlayStyles;
-        document.head.appendChild(style);
+    const style = document.createElement("style");
+    style.id = "ai-saver-style";
+    style.textContent = overlayStyles;
+    document.head.appendChild(style);
 }
 
 const handleImpulse = (event: MouseEvent) => {
@@ -196,17 +196,47 @@ const handleImpulse = (event: MouseEvent) => {
     }
 };
 
+function handleItemSave(overlay: HTMLElement) {
+    overlay.remove();
+
+    const itemName =
+        document.getElementById("item-name")?.innerText || "Unknown Item";
+    const priceRaw = document.getElementById("item-price")?.innerText || "0";
+
+    const itemPrice = parseFloat(priceRaw.replace(/[^\d.]/g, ""));
+
+    chrome.storage.local.get(["purchaseHistory", "savedAmount"], (result) => {
+        const history = (result.purchaseHistory as any[]) || [];
+        const saved = result.savedAmount || 0;
+
+        const newItem = {
+            id: Date.now(),
+            name: itemName,
+            price: itemPrice,
+            date: new Date().toLocaleDateString(),
+            status: "interupted",
+        };
+
+        chrome.storage.local.set({ 
+            purchaseHistory: [newItem, ...history],
+            savedAmount: Number(saved) + itemPrice
+        }, 
+            () => {
+            console.log("Item added to history log.");
+        });
+    });
+}
+
 function injectOverlay() {
-        ensureOverlayStyles();
+    ensureOverlayStyles();
 
     const overlay = document.createElement("div");
     overlay.id = "ai-saver-overlay";
 
-    
     overlay.innerHTML = `
         <div id="ai-saver-card">
             <div class="saver-icon-ring" aria-hidden="true">
-                <img src="${chrome.runtime.getURL('icon.png')}" alt="Impulse Saver wallet icon" />
+                <img src="${chrome.runtime.getURL("icon.png")}" alt="Impulse Saver wallet icon" />
             </div>
             <h1 class="saver-title">Wait! Do you really need this?</h1>
             <p class="saver-subtitle">Impulse check</p>
@@ -226,7 +256,7 @@ function injectOverlay() {
 
     document
         .getElementById("cancel-btn")
-        ?.addEventListener("click", () => overlay.remove());
+        ?.addEventListener("click", () => handleItemSave(overlay));
     document.getElementById("continue-btn")?.addEventListener("click", () => {
         alert("Moving funds to savings simulator...");
         overlay.remove();
@@ -240,32 +270,36 @@ async function fetchAIMessage() {
     const messageElement = document.getElementById("ai-message");
 
     // 1. Get the user's specific goal from storage
-    chrome.storage.local.get(["goalName", "targetAmount", "savedAmount"], async (result) => {
-        const goal = result.goalName || "Home Server";
-        const target = result.targetAmount || 15000;
-        const savedAmount = result.savedAmount || 0;
+    chrome.storage.local.get(
+        ["goalName", "targetAmount", "savedAmount"],
+        async (result) => {
+            const goal = result.goalName || "Home Server";
+            const target = result.targetAmount || 15000;
+            const savedAmount = result.savedAmount || 0;
 
-        try {
-            // 2. Send these personalized goal details to your Node.js backend
-            const response = await fetch(
-                "http://localhost:5050/analyze-impulse",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        item: "Product Name",
-                        price: 2500,
-                        userGoal: goal,
-                        userTarget: target,
-                        savedAmount,
-                    }),
-                },
-            );
-            const data = await response.json();
-            if (messageElement) messageElement.innerText = data.persuasionText;
-        } catch (err) {
-            if (messageElement)
-                messageElement.innerText = `Think of your ${goal}!`;
-        }
-    });
+            try {
+                // 2. Send these personalized goal details to your Node.js backend
+                const response = await fetch(
+                    "http://localhost:5050/analyze-impulse",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            item: "Product Name",
+                            price: 2500,
+                            userGoal: goal,
+                            userTarget: target,
+                            savedAmount,
+                        }),
+                    },
+                );
+                const data = await response.json();
+                if (messageElement)
+                    messageElement.innerText = data.persuasionText;
+            } catch (err) {
+                if (messageElement)
+                    messageElement.innerText = `Think of your ${goal}!`;
+            }
+        },
+    );
 }

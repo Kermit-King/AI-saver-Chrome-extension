@@ -1,4 +1,7 @@
 // alert("CONTENT SCRIPT LOADED");
+
+import { useEffect, useState } from "react";
+
 // console.log("IF YOU SEE THIS, IT WORKS");
 const overlayStyles = `
     #ai-saver-overlay {
@@ -196,14 +199,14 @@ const handleImpulse = (event: MouseEvent) => {
     }
 };
 
-function handleItemSave(overlay: HTMLElement) {
+function handleItemSave(overlay: HTMLElement, itemName: string, itemPrice: number) {
     overlay.remove();
 
-    const itemName =
-        document.getElementById("item-name")?.innerText || "Unknown Item";
-    const priceRaw = document.getElementById("item-price")?.innerText || "0";
+    // const itemName =
+    //     document.getElementById("item-name")?.innerText || "Unknown Item";
+    // const priceRaw = document.getElementById("item-price")?.innerText || "0";
 
-    const itemPrice = parseFloat(priceRaw.replace(/[^\d.]/g, ""));
+    // const itemPrice = parseFloat(priceRaw.replace(/[^\d.]/g, ""));
 
     chrome.storage.local.get(
         ["purchaseHistory", "savedAmount", "blockedCount"],
@@ -238,6 +241,11 @@ function handleItemSave(overlay: HTMLElement) {
 function injectOverlay() {
     ensureOverlayStyles();
 
+    const itemName =
+        document.getElementById("item-name")?.innerText || "Unknown Item";
+    const priceRaw = document.getElementById("item-price")?.innerText || "0";
+    const itemPrice = parseFloat(priceRaw.replace(/[^\d.]/g, ""));
+
     const overlay = document.createElement("div");
     overlay.id = "ai-saver-overlay";
 
@@ -260,11 +268,11 @@ function injectOverlay() {
     document.body.appendChild(overlay);
 
     // Logic to fetch AI message from your Node.js/Home Server
-    fetchAIMessage();
+    fetchAIMessage(itemName, itemPrice);
 
     document
         .getElementById("cancel-btn")
-        ?.addEventListener("click", () => handleItemSave(overlay));
+        ?.addEventListener("click", () => handleItemSave(overlay, itemName, itemPrice));
     document.getElementById("continue-btn")?.addEventListener("click", () => {
         alert("Moving funds to savings simulator...");
         overlay.remove();
@@ -274,7 +282,7 @@ function injectOverlay() {
 
 document.addEventListener("click", handleImpulse, true);
 
-async function fetchAIMessage() {
+async function fetchAIMessage(itemName: string, itemPrice: number) {
     const messageElement = document.getElementById("ai-message");
 
     // 1. Get the user's specific goal from storage
@@ -293,8 +301,8 @@ async function fetchAIMessage() {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            item: "Product Name",
-                            price: 2500,
+                            item: itemName,
+                            price: itemPrice,
                             userGoal: goal,
                             userTarget: target,
                             savedAmount,

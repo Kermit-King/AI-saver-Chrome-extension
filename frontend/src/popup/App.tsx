@@ -72,8 +72,10 @@ function App() {
 
   const handleReset = () => {
     setSavedAmount('')
+    setBlockedCount(0)
     chrome.storage.local.set({
       savedAmount: 0,
+      blockedCount: 0
     })
   }
 

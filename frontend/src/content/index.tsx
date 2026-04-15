@@ -310,6 +310,10 @@ async function fetchAIMessage(itemName: string, itemPrice: number) {
                     },
                 );
                 const data = await response.json();
+
+                if(response.ok){
+                    console.log("ai responded")
+                }
                 if (messageElement)
                     messageElement.innerText = data.persuasionText;
             } catch (err) {

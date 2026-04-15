@@ -35,19 +35,14 @@ app.use(express.json());
 // }
 
 async function handleAnalyze(req, res) {
-  const { item, price, userGoal, userTarget, savedAmount } = req.body ?? {};
+  const { price, userGoal, userTarget, savedAmount } = req.body ?? {};
 
   try {
-    const persuasionText = execSync(`python ./ai_logic.py "${userGoal}" "${userTarget}" "${item}" "${price}" "${savedAmount}"`, { encoding: 'utf8' }).trim();
-
-
+    const persuasionText = execSync(`python ./ai_logic.py "${userGoal}" "${userTarget}" "${price}" "${savedAmount}"`, { encoding: 'utf8' }).trim();
 
     return res.json({ persuasionText });
   } catch (error) {
-    console.error("/analyze error:", error);
-    return res.status(500).json({
-      persuasionText: `Think of your ${userGoal}. You can do this.`,
-    });
+    res.json({ persuasionText: "Focus on your savings goal!" });
   }
 }
 

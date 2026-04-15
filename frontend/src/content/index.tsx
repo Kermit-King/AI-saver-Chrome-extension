@@ -1,6 +1,6 @@
 // alert("CONTENT SCRIPT LOADED");
 
-import { useEffect, useState } from "react";
+// import { useEffect, useState } from "react";
 
 // console.log("IF YOU SEE THIS, IT WORKS");
 const overlayStyles = `
@@ -179,6 +179,13 @@ function ensureOverlayStyles() {
 }
 
 const handleImpulse = (event: MouseEvent) => {
+
+    if ((window as any).allowNextClick === true) {
+        console.log("Allowing bypass click...");
+        (window as any).allowNextClick = false; // Reset it immediately
+        return; // EXIT early and do nothing
+    }
+    
     const target = event.target as HTMLElement;
 
     console.log("DEBUG: You actually touched a:", target.tagName);
@@ -194,12 +201,17 @@ const handleImpulse = (event: MouseEvent) => {
     // 3. Now we know they clicked a button, check the text
     const text = btn.innerText.toLowerCase();
     if (text.includes("check out") || text.includes("checkout")) {
+        event.preventDefault();
+        event.stopPropagation();
         console.log("Success! Button logic triggered.");
         injectOverlay();
     }
 };
 
-function handleItemSave(overlay: HTMLElement, itemName: string, itemPrice: number) {
+function handleItemSave(
+    overlay: HTMLElement,
+    /*itemName: string,*/ itemPrice: number,
+) {
     overlay.remove();
 
     // const itemName =
@@ -218,7 +230,7 @@ function handleItemSave(overlay: HTMLElement, itemName: string, itemPrice: numbe
 
             const newItem = {
                 id: Date.now(),
-                name: itemName,
+                // name: itemName,
                 price: itemPrice,
                 date: new Date().toLocaleDateString(),
                 status: "interupted",
@@ -241,9 +253,10 @@ function handleItemSave(overlay: HTMLElement, itemName: string, itemPrice: numbe
 function injectOverlay() {
     ensureOverlayStyles();
 
-    const itemName =
-        document.getElementById("item-name")?.innerText || "Unknown Item";
-    const priceRaw = document.getElementById("item-price")?.innerText || "0";
+    // const itemName =
+    //     document.getElementById("item-name")?.innerText || "Unknown Item";
+    const priceRaw =
+        (document.querySelector("div.mketV9") as HTMLElement)?.innerText || "0";
     const itemPrice = parseFloat(priceRaw.replace(/[^\d.]/g, ""));
 
     const overlay = document.createElement("div");
@@ -266,23 +279,38 @@ function injectOverlay() {
   `;
 
     document.body.appendChild(overlay);
+    console.log(
+        "scraped Price: ",
+        (document.querySelector("a.mketV9") as HTMLElement)?.innerText,
+    );
 
     // Logic to fetch AI message from your Node.js/Home Server
-    fetchAIMessage(itemName, itemPrice);
+    fetchAIMessage(/*itemName,*/ itemPrice);
 
     document
         .getElementById("cancel-btn")
-        ?.addEventListener("click", () => handleItemSave(overlay, itemName, itemPrice));
+        ?.addEventListener("click", () =>
+            handleItemSave(overlay /*, itemName*/, itemPrice),
+        );
     document.getElementById("continue-btn")?.addEventListener("click", () => {
-        alert("Moving funds to savings simulator...");
+        // alert("Moving funds to savings simulator...");
         overlay.remove();
+        const originalBtn = document.querySelector(
+            ".shopee-button-solid--primary",
+        ) as HTMLElement;
+
+        if (originalBtn) {
+            // We tell our handleImpulse to ignore the next click
+            (window as any).allowNextClick = true;
+            originalBtn.click();
+        }
         // Here you would trigger the actual checkout if they insist
     });
 }
 
 document.addEventListener("click", handleImpulse, true);
 
-async function fetchAIMessage(itemName: string, itemPrice: number) {
+async function fetchAIMessage(/*itemName: string,*/ itemPrice: number) {
     const messageElement = document.getElementById("ai-message");
 
     // 1. Get the user's specific goal from storage
@@ -301,7 +329,7 @@ async function fetchAIMessage(itemName: string, itemPrice: number) {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            item: itemName,
+                            //item: itemName,
                             price: itemPrice,
                             userGoal: goal,
                             userTarget: target,
@@ -311,8 +339,8 @@ async function fetchAIMessage(itemName: string, itemPrice: number) {
                 );
                 const data = await response.json();
 
-                if(response.ok){
-                    console.log("ai responded")
+                if (response.ok) {
+                    console.log("ai responded");
                 }
                 if (messageElement)
                     messageElement.innerText = data.persuasionText;

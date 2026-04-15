@@ -33,9 +33,10 @@
             "matches": [
                 "http://localhost/*",
                 "http://127.0.0.1/*",
-                "*://*.shopee.ph/*",
+                "*://shopee.ph/*",
                 "*://*.lazada.com.ph/*"
-            ]
+            ],
+            "run_at": "document_start"
         }
     ]
 }

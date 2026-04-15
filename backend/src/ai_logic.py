@@ -8,12 +8,12 @@ load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
-async def generateAiResponse(goalItem, goalPrice, item, price, savedAmount):
+async def generateAiResponse(goalItem, goalPrice, price, savedAmount):
     try:
         # Use the .aio attribute for asynchronous calls
         response = await client.aio.models.generate_content(
             model="gemini-2.5-flash", # Note: Standard 2026 stable model
-            contents=f"In one short sentence, convince me not to buy {item} that costs {price}. I am looking to save up for a {goalItem} which costs {goalPrice}. I have already saved {savedAmount}."
+            contents=f"In one short sentence, convince me not to buy item that costs {price}. I am looking to save up for a {goalItem} which costs {goalPrice}. I have already saved {savedAmount}."
         )
         return response.text
     except Exception as e:
